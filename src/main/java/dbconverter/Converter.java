@@ -209,11 +209,25 @@ public class Converter {
 	 * @param ess
 	 * @param result
 	 * @param input
+	 * @throws Exception
 	 */
-	private void convertEssSoc(Map<String, Component> ess, Map<String, Object> result, Map<String, Object> input) {
+	private void convertEssSoc(Map<String, Component> ess, Map<String, Object> result, Map<String, Object> input)
+			throws Exception {
 		Integer sum = null;
-		for (String id : ess.keySet()) {
-			sum = add(sum, getValue(input, String.format(SOC, id)));
+		for (Entry<String, Component> entry : ess.entrySet()) {
+			String factoryPid = entry.getValue().getFactoryId();
+			switch (factoryPid) {
+			case "io.openems.impl.device.system.asymmetricsymmetriccombinationess.AsymmetricSymmetricCombinationEssNature":
+				// ignore
+				break;
+
+			case "io.openems.impl.device.pro.FeneconProEss":
+				sum = add(sum, getValue(input, String.format(SOC, entry.getKey())));
+				break;
+
+			default:
+				throw new Exception("Unknown ESS factory: " + factoryPid);
+			}
 		}
 
 		copyValue(result, input, SUM_ESS_SOC, sum);
@@ -233,6 +247,10 @@ public class Converter {
 		for (Entry<String, Component> entry : ess.entrySet()) {
 			String factoryPid = entry.getValue().getFactoryId();
 			switch (factoryPid) {
+			case "io.openems.impl.device.system.asymmetricsymmetriccombinationess.AsymmetricSymmetricCombinationEssNature":
+				// ignore
+				break;
+			
 			// ASYMMETRIC
 			case "io.openems.impl.device.minireadonly.FeneconMiniEss":
 			case "io.openems.impl.device.pro.FeneconProEss":
@@ -301,12 +319,21 @@ public class Converter {
 	 * @param chargers
 	 * @param result
 	 * @param input
+	 * @throws Exception
 	 */
 	private void convertProductionDcPower(Map<String, Component> chargers, Map<String, Object> result,
-			Map<String, Object> input) {
+			Map<String, Object> input) throws Exception {
 		Integer sum = null;
 		for (Entry<String, Component> entry : chargers.entrySet()) {
-			sum = add(sum, getValue(input, String.format(ACTUAL_POWER, entry.getKey())));
+			String factoryPid = entry.getValue().getFactoryId();
+			switch (factoryPid) {
+			case "TODO":
+				sum = add(sum, getValue(input, String.format(ACTUAL_POWER, entry.getKey())));
+				break;
+
+			default:
+				throw new Exception("Unknown Charger factory: " + factoryPid);
+			}
 		}
 		copyValue(result, input, SUM_PRODUCTION_DC_ACTUAL_POWER, sum);
 	}
