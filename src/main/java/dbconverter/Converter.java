@@ -231,7 +231,7 @@ public class Converter {
 			throws Exception {
 		Integer sum = null;
 		for (Entry<String, Component> entry : ess.entrySet()) {
-			String factoryPid = entry.getValue().getFactoryPid();
+			String factoryPid = entry.getValue().getFactoryId();
 			switch (factoryPid) {
 			// ASYMMETRIC
 			case "io.openems.impl.device.minireadonly.FeneconMiniEss":
@@ -272,7 +272,7 @@ public class Converter {
 	private Integer getMeterPower(Entry<String, Component> meter, Map<String, Object> result, Map<String, Object> input)
 			throws Exception {
 		Integer sum = null;
-		String clazz = meter.getValue().getFactoryPid();
+		String clazz = meter.getValue().getFactoryId();
 		switch (clazz) {
 		// ASYMMETRIC
 		case "io.openems.impl.device.pro.FeneconProPvMeter":

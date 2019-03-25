@@ -112,7 +112,7 @@ public class Utils {
 		TreeMap<String, Component> components = config.getComponents();
 		for (Entry<String, Component> entry : components.entrySet()) {
 			Component component = entry.getValue();
-			String clazz = component.getFactoryPid();
+			String clazz = component.getFactoryId();
 			String id = entry.getKey();
 			if (!clazz.startsWith("io.openems.impl.device.") || id.startsWith("_")) {
 				continue;
