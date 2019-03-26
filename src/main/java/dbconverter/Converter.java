@@ -28,6 +28,7 @@ public class Converter {
 	private final static String ACTUAL_ENERGY = "%s/ActualEnergy";
 	private final static String ACTIVE_PRODUCTION_ENERGY = "%s/ActiveProductionEnergy";
 	private final static String ACTIVE_CONSUMPTION_ENERGY = "%s/ActiveConsumptionEnergy";
+	private final static String CHARGE_POWER = "%s/ChargePower";
 
 	public final static String DESS_METER0_ACTIVE_POWER_L1 = "PCS1_Grid_Phase1_Active_Power";
 	public final static String DESS_METER0_ACTIVE_POWER_L2 = "PCS2_Grid_Phase2_Active_Power";
@@ -97,21 +98,9 @@ public class Converter {
 			result.add(DESS_CONSUMPTION_L3);
 			break;
 		case OPENEMS_V1:
-			for (String id : new String[] { "ess0", "ess1" }) {
-				result.add(String.format(SOC, id));
-				result.add(String.format(ACTIVE_POWER, id));
-				result.add(String.format(ACTIVE_POWER_L1, id));
-				result.add(String.format(ACTIVE_POWER_L2, id));
-				result.add(String.format(ACTIVE_POWER_L3, id));
-			}
-			for (String id : new String[] { "meter0", "meter1", "meter2" }) {
-				result.add(String.format(ACTIVE_POWER, id));
-				result.add(String.format(ACTIVE_POWER_L1, id));
-				result.add(String.format(ACTIVE_POWER_L2, id));
-				result.add(String.format(ACTIVE_POWER_L3, id));
-			}
-			for (String id : new String[] { "charger0" }) {
+			for (String id : new String[] { "evcs0" }) {
 				result.add(String.format(ACTUAL_POWER, id));
+				result.add(String.format(CHARGE_POWER, id));
 			}
 			break;
 		}
@@ -127,6 +116,7 @@ public class Converter {
 			convertGridPower(things.gridMeter, result, input);
 			convertProductionAcPower(things.productionMeters, result, input);
 			convertProductionDcPower(things.chargers, result, input);
+			convertEvcs(things.evcs, result, input);
 			sumProductionPower(result, input);
 			sumConsumptionPower(result, input);
 			break;
@@ -134,6 +124,7 @@ public class Converter {
 			convertDess(result, input);
 			break;
 		}
+//		WARNING! setChannelValueToZero(result, SUM_PRODUCTION_DC_ACTUAL_POWER);
 		return result;
 	};
 
@@ -196,6 +187,22 @@ public class Converter {
 		}
 	}
 
+	private static Integer divide(Object value, int divisor) {
+		if (value == null) {
+			return null;
+		}
+
+		int intValue;
+		if (value instanceof Double) {
+			intValue = ((Double) value).intValue();
+		} else if (value instanceof Integer) {
+			intValue = (Integer) value;
+		} else {
+			throw new IllegalArgumentException("Unable to cast value " + value);
+		}
+		return intValue / divisor;
+	}
+
 	private Object getValue(Map<String, Object> values, String channel) {
 		if (!CHANNELS.contains(channel)) {
 			throw new IllegalArgumentException("Channel was not queried: " + channel);
@@ -222,6 +229,7 @@ public class Converter {
 				break;
 
 			case "io.openems.impl.device.pro.FeneconProEss":
+			case "Fenecon.Pro.Ess":
 				sum = add(sum, getValue(input, String.format(SOC, entry.getKey())));
 				break;
 
@@ -250,10 +258,11 @@ public class Converter {
 			case "io.openems.impl.device.system.asymmetricsymmetriccombinationess.AsymmetricSymmetricCombinationEssNature":
 				// ignore
 				break;
-			
+
 			// ASYMMETRIC
 			case "io.openems.impl.device.minireadonly.FeneconMiniEss":
 			case "io.openems.impl.device.pro.FeneconProEss":
+			case "Fenecon.Pro.Ess":
 				sum = add(sum, getValue(input, String.format(ACTIVE_POWER_L1, entry.getKey())));
 				sum = add(sum, getValue(input, String.format(ACTIVE_POWER_L2, entry.getKey())));
 				sum = add(sum, getValue(input, String.format(ACTIVE_POWER_L3, entry.getKey())));
@@ -294,6 +303,7 @@ public class Converter {
 		switch (clazz) {
 		// ASYMMETRIC
 		case "io.openems.impl.device.pro.FeneconProPvMeter":
+		case "Fenecon.Pro.PvMeter":
 			sum = add(sum, getValue(input, String.format(ACTIVE_POWER_L1, meter.getKey())));
 			sum = add(sum, getValue(input, String.format(ACTIVE_POWER_L2, meter.getKey())));
 			sum = add(sum, getValue(input, String.format(ACTIVE_POWER_L3, meter.getKey())));
@@ -303,6 +313,7 @@ public class Converter {
 		case "io.openems.impl.device.minireadonly.FeneconMiniProductionMeter":
 		case "io.openems.impl.device.minireadonly.FeneconMiniGridMeter":
 		case "io.openems.impl.device.socomec.SocomecMeter":
+		case "Meter.SOCOMEC.DirisA14":
 			sum = add(sum, getValue(input, String.format(ACTIVE_POWER, meter.getKey())));
 			break;
 
@@ -336,6 +347,33 @@ public class Converter {
 			}
 		}
 		copyValue(result, input, SUM_PRODUCTION_DC_ACTUAL_POWER, sum);
+	}
+
+	/**
+	 * evcs0/ActualPower -> evcs0/ChargePower
+	 * 
+	 * @param evcss
+	 * @param result
+	 * @param input
+	 * @throws Exception
+	 */
+	private void convertEvcs(Map<String, Component> evcss, Map<String, Object> result, Map<String, Object> input)
+			throws Exception {
+		for (Entry<String, Component> entry : evcss.entrySet()) {
+			String factoryPid = entry.getValue().getFactoryId();
+			switch (factoryPid) {
+			case "Evcs.Keba.KeContact":
+				copyValue(result, input, //
+						// Output:
+						String.format(CHARGE_POWER, entry.getKey()), //
+						// Input:
+						divide(getValue(input, String.format(ACTUAL_POWER, entry.getKey())), 1000));
+				break;
+
+			default:
+				throw new Exception("Unknown EVCS factory: " + factoryPid);
+			}
+		}
 	}
 
 	/**
@@ -384,6 +422,18 @@ public class Converter {
 		sum = add(sum, getValue(result, SUM_GRID_ACTIVE_POWER));
 		sum = add(sum, getValue(result, SUM_PRODUCTION_AC_ACTIVE_POWER));
 		copyValue(result, input, SUM_CONSUMPTION_ACTIVE_POWER, sum);
+	}
+
+	/**
+	 * Sets the given Channel value to zero.
+	 * 
+	 * @param result
+	 * @param targetChannel
+	 */
+	@SuppressWarnings("unused")
+	private void setChannelValueToZero(Map<String, Object> result, String targetChannel) {
+		System.out.println("Warning: Setting " + targetChannel + " to zero!");
+		result.put(targetChannel, 0);
 	}
 
 	/**

@@ -95,6 +95,7 @@ public class Utils {
 		Map.Entry<String, Component> gridMeter = null;
 		Map<String, Component> productionMeters = new HashMap<>();
 		Map<String, Component> chargers = new HashMap<>();
+		Map<String, Component> evcs = new HashMap<>();
 
 		protected void assertValues() throws Exception {
 			if (ess.isEmpty()) {
@@ -112,35 +113,49 @@ public class Utils {
 		TreeMap<String, Component> components = config.getComponents();
 		for (Entry<String, Component> entry : components.entrySet()) {
 			Component component = entry.getValue();
-			String clazz = component.getFactoryId();
 			String id = entry.getKey();
-			if (!clazz.startsWith("io.openems.impl.device.") || id.startsWith("_")) {
+			if (id.startsWith("_")) {
 				continue;
 			}
-			switch (id) {
-			case "system0":
-			case "evcs0":
-			case "output0":
+			String idWithoutNumber = id.replaceAll("\\d*$", "");
+			switch (idWithoutNumber) {
+			case "system":
+			case "output":
+			case "ctrlApiRest":
+			case "ctrlApiWebsocket":
+			case "ctrlBackend":
+			case "ctrlBalancing":
+			case "ctrlDebugLog":
+			case "ctrlEvcs":
+			case "ctrlLimitTotalDischarge":
+			case "influx":
+			case "modbus":
+			case "scheduler":
 				// ignore
 				break;
 
-			default:
-				if (id.startsWith("meter")) {
-					if (id.equals("meter0")) {
-						result.gridMeter = new AbstractMap.SimpleEntry<String, Component>(id, component);
-					} else {
-						result.productionMeters.put(id, component);
-					}
-
-				} else if (id.startsWith("ess")) {
-					result.ess.put(id, component);
-
-				} else if (id.startsWith("charger")) {
-					result.chargers.put(id, component);
-
+			case "meter":
+				if (id.equals("meter0")) {
+					result.gridMeter = new AbstractMap.SimpleEntry<String, Component>(id, component);
 				} else {
-					throw new Exception("Undefined component: " + component);
+					result.productionMeters.put(id, component);
 				}
+				break;
+
+			case "ess":
+				result.ess.put(id, component);
+				break;
+
+			case "charger":
+				result.chargers.put(id, component);
+				break;
+
+			case "evcs":
+				result.evcs.put(id, component);
+				break;
+
+			default:
+				throw new Exception("Undefined component: " + id);
 			}
 		}
 		result.assertValues();

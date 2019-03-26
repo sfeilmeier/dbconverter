@@ -84,13 +84,10 @@ public enum OpenemsError {
 
 	private final int code;
 	private final String message;
-	private final int noOfParams;
 
 	private OpenemsError(int code, String message) {
 		this.code = code;
 		this.message = message;
-//		this.noOfParams = CharMatcher.is('%').countIn(message);
-		this.noOfParams = 0;
 	}
 
 	public int getCode() {
@@ -102,10 +99,6 @@ public enum OpenemsError {
 	}
 
 	public String getMessage(Object... params) {
-		if (params.length != this.noOfParams) {
-			System.out.println("OpenEMS-Error [" + this.name() + "] expects [" + this.noOfParams + "] params, got ["
-					+ params.length + "]");
-		}
 		return String.format(this.message, params);
 	}
 
