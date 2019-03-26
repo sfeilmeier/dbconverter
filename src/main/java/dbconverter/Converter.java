@@ -230,6 +230,7 @@ public class Converter {
 
 			case "io.openems.impl.device.pro.FeneconProEss":
 			case "Fenecon.Pro.Ess":
+				// TODO should be average value!
 				sum = add(sum, getValue(input, String.format(SOC, entry.getKey())));
 				break;
 
