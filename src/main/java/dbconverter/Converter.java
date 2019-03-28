@@ -315,6 +315,7 @@ public class Converter {
 		case "io.openems.impl.device.minireadonly.FeneconMiniGridMeter":
 		case "io.openems.impl.device.socomec.SocomecMeter":
 		case "Meter.SOCOMEC.DirisA14":
+		case "Meter.SOCOMEC.CountisE24":
 			sum = add(sum, getValue(input, String.format(ACTIVE_POWER, meter.getKey())));
 			break;
 
