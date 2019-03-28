@@ -1,0 +1,33 @@
+package dbconverter;
+
+public class Settings {
+
+	enum Types {
+		OPENEMS_V1, DESS
+	}
+
+	public static String INFLUX_URL = "http://localhost:8086";
+	public static String INFLUX_USER = "admin";
+	public static String INFLUX_PASSWORD = "admin";
+	public final String INFLUX_DATABASE = "db";
+	public final String INFLUX_SOURCE_MEASUREMENT;
+	public final String INFLUX_TARGET_MEASUREMENT = "data";
+	{
+		switch (App.TYPE) {
+		case DESS:
+			INFLUX_SOURCE_MEASUREMENT = "dess";
+			break;
+		case OPENEMS_V1:
+		default:
+			INFLUX_SOURCE_MEASUREMENT = "data";
+		}
+	}
+
+	public final static String ODOO_URL = "https://some.url";
+	public final static String ODOO_DATABASE = "DBNAME";
+	public final static String ODOO_PASSWORD = "DBPW";
+	public final static String ODOO_FEMS_MODEL = "FEMSMODEL";
+
+	public static int CHUNK_DAYS = 5;
+	public static int CHUNK_HOURS = 0;
+}

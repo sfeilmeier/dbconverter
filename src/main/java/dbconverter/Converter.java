@@ -1,10 +1,14 @@
 package dbconverter;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.OptionalDouble;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import dbconverter.EdgeConfig.Component;
 import dbconverter.influx.Influx.PointsFunction;
@@ -306,10 +310,8 @@ public class Converter {
 	 */
 	private void convertEssSoc(Map<String, Component> ess, Map<String, Object> result, Map<String, Object> input)
 			throws Exception {
-		Integer sum = null;
-		Integer amount = 0;
+		List<Object> socs = new ArrayList<>();
 		for (Entry<String, Component> entry : ess.entrySet()) {
-			amount++;
 			String factoryPid = entry.getValue().getFactoryId();
 			switch (factoryPid) {
 			case "io.openems.impl.device.system.asymmetricsymmetriccombinationess.AsymmetricSymmetricCombinationEssNature":
@@ -318,18 +320,22 @@ public class Converter {
 
 			case "io.openems.impl.device.pro.FeneconProEss":
 			case "Fenecon.Pro.Ess":
-				sum = add(sum, getValue(input, String.format(SOC, entry.getKey())));
+				socs.add(getValue(input, String.format(SOC, entry.getKey())));
 				break;
 			default:
 				throw new Exception("Unknown ESS factory: " + factoryPid);
 			}
 		}
-		Integer val = null;
-		if (sum != null && amount != 0) {
-			val = sum / amount;
-		}
-
-		copyValue(result, input, SUM_ESS_SOC, val);
+		OptionalDouble val = socs.stream().filter(o -> o != null).mapToInt(value -> {
+			if (value instanceof Double) {
+				return ((Double) value).intValue();
+			} else if (value instanceof Integer) {
+				return (Integer) value;
+			} else {
+				throw new IllegalArgumentException("Unable to cast value " + value);
+			}
+		}).average();
+		copyValue(result, input, SUM_ESS_SOC, (val != null && val.isPresent()) ? (int) val.getAsDouble() : null);
 	}
 
 	/**
