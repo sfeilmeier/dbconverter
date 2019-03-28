@@ -2,6 +2,7 @@ package dbconverter;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -26,6 +27,10 @@ public class App {
 	private final static String TO_DATE = "";
 
 	public final static boolean OVERWRITE = false;
+	public final static boolean PRODUCTION = true;
+	public final static int RETRY_COUNT = 2;
+	
+	// TODO: add "public final static int CHUNK_HOURS = 0;" to Settings.java
 
 	public static void main(String[] args) throws Exception {
 		Converter converter = new Converter();
@@ -42,38 +47,60 @@ public class App {
 		ZonedDateTime initialFromDate = Utils.getFromDate(FEMS, FROM_DATE);
 		ZonedDateTime initialToDate = Utils.getToDate(TO_DATE);
 
-		List<Utils.TimeChunk> timeChunks = Utils.getTimeChunks(initialFromDate, initialToDate, Settings.CHUNK_DAYS);
-		for (Utils.TimeChunk timeChunk : timeChunks) {
+		List<Utils.TimeChunk> timeChunks = Utils.getTimeChunks(initialFromDate, initialToDate, Settings.CHUNK_DAYS, Settings.CHUNK_HOURS);
+		
+		List<Utils.TimeChunk> ignoredChunks = new ArrayList<>();
+		int errors = 0;
+		for (int i = 0; i < timeChunks.size(); i++) {
+			Utils.TimeChunk timeChunk = timeChunks.get(i);
+			try {
+				System.out.println("Period: " + timeChunk.fromDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " - "
+						+ timeChunk.toDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
 
-			System.out.println("Period: " + timeChunk.fromDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) + " - "
-					+ timeChunk.toDate.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+				// Run Logic for every time chunk
+				QueryResult queryResult = Influx.query(FEMS, timeChunk.fromDate.minusSeconds(1),
+						timeChunk.toDate.plusSeconds(1), settings.INFLUX_SOURCE_MEASUREMENT, converter.CHANNELS);
+				Map<Long, Map<String, Object>> data;
+				if (settings.INFLUX_SOURCE_MEASUREMENT == settings.INFLUX_TARGET_MEASUREMENT) {
+					data = Influx.queryResultToList(queryResult);
+				} else {
+					// if source and target measurement are different: combine both
+					QueryResult queryResult1 = Influx.query(FEMS, timeChunk.fromDate.minusSeconds(1),
+							timeChunk.toDate.plusSeconds(1), settings.INFLUX_TARGET_MEASUREMENT, converter.CHANNELS);
+					data = Influx.queryResultToList(queryResult, queryResult1);
+				}
 
-			// Run Logic for every time chunk
-			QueryResult queryResult = Influx.query(FEMS, timeChunk.fromDate.minusSeconds(1),
-					timeChunk.toDate.plusSeconds(1), settings.INFLUX_SOURCE_MEASUREMENT, converter.CHANNELS);
-			Map<Long, Map<String, Object>> data;
-			if (settings.INFLUX_SOURCE_MEASUREMENT == settings.INFLUX_TARGET_MEASUREMENT) {
-				data = Influx.queryResultToList(queryResult);
-			} else {
-				// if source and target measurement are different: combine both
-				QueryResult queryResult1 = Influx.query(FEMS, timeChunk.fromDate.minusSeconds(1),
-						timeChunk.toDate.plusSeconds(1), settings.INFLUX_TARGET_MEASUREMENT, converter.CHANNELS);
-				data = Influx.queryResultToList(queryResult, queryResult1);
-			}
-
-			BatchPoints batchPoints = Influx.createBatchPoints(FEMS, things, data, converter.FUNCTION);
-			if (batchPoints != null) {
-				try {
-					Influx.write(batchPoints);
-				} catch (InfluxDBIOException e) {
-					System.out.println(" Error. Try again. " + e.getMessage());
+				BatchPoints batchPoints = Influx.createBatchPoints(FEMS, things, data, converter.FUNCTION);
+				if (batchPoints != null) {
 					Influx.write(batchPoints);
 				}
+			} catch(Exception e) {
+				if (!PRODUCTION) {
+					throw e;
+				}
+				System.out.println(e.getMessage());
+				if (errors < RETRY_COUNT) {
+					errors++;
+					System.out.println("retrying with same period...");
+					i--;
+				} else {
+					e.printStackTrace();
+					errors = 0;
+					ignoredChunks.add(timeChunk);
+					System.out.println("too many errors with same period...continuing with next period");
+				}
+				continue;
 			}
-
+			errors = 0;
 		}
 
 		System.out.println("Finished.");
+		if (ignoredChunks.size() != 0) {
+			System.out.println("The following periods could not be processed due to some errors (view log for details):");
+			for (Utils.TimeChunk c : ignoredChunks) {
+				System.out.println(c);
+			}
+		}
 	}
 
 }
