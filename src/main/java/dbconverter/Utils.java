@@ -62,10 +62,11 @@ public class Utils {
 	 * @param initialFromDate
 	 * @param initialToDate
 	 * @param chunkDays
+	 * @param chunkHours
 	 * @return
 	 */
 	protected static List<TimeChunk> getTimeChunks(ZonedDateTime initialFromDate, ZonedDateTime initialToDate,
-			int chunkDays) {
+			int chunkDays, int chunkHours) {
 		List<TimeChunk> result = new ArrayList<>();
 
 		ZonedDateTime fromDate = initialFromDate;
@@ -73,6 +74,7 @@ public class Utils {
 		while (toDate == null || toDate.isBefore(initialToDate)) {
 			// get next toDate
 			toDate = fromDate.plusDays(chunkDays);
+			toDate = toDate.plusHours(chunkHours);
 			if (toDate.isAfter(initialToDate)) {
 				toDate = initialToDate;
 			}
