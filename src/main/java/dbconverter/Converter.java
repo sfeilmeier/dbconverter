@@ -154,15 +154,14 @@ public class Converter {
 			convertEvcs(things.evcs, result, input);
 			sumProductionPower(result, input);
 			sumConsumptionPower(result, input);
+			convertEssActiveChargeEnergy(things.ess, result, input);
+			convertEssActiveDischargeEnergy(things.ess, result, input);
+			convertGridBuyActiveEnergy(things.gridMeter, result, input);
+			convertGridSellActiveEnergy(things.gridMeter, result, input);
 			sumProductionDcActiveEnergy(things.chargers, result, input);
 			sumProductionAcActiveEnergy(things.productionMeters, result, input);
 			sumProductionActiveEnergy(result, input);
-
-			sumConsumptionActiveEnergy(result, input, convertEssActiveChargeEnergy(things.ess, result, input),
-					convertEssActiveDischargeEnergy(things.ess, result, input),
-					convertGridBuyActiveEnergy(things.gridMeter, result, input),
-					convertGridSellActiveEnergy(things.gridMeter, result, input),
-					sumProductionAcActiveEnergy(things.productionMeters, result, input)); // depends on SUM channels
+			sumConsumptionActiveEnergy(result, input);
 			break;
 		case DESS:
 			convertDess(result, input);
@@ -675,10 +674,9 @@ public class Converter {
 	 * @param ess
 	 * @param result
 	 * @param input
-	 * @return _sum/EssActiveChargeEnergy
 	 * @throws Exception
 	 */
-	private Integer convertEssActiveChargeEnergy(Map<String, Component> ess, Map<String, Object> result,
+	private void convertEssActiveChargeEnergy(Map<String, Component> ess, Map<String, Object> result,
 			Map<String, Object> input) throws Exception {
 		Integer sum = null;
 		for (Entry<String, Component> entry : ess.entrySet()) {
@@ -696,7 +694,6 @@ public class Converter {
 			}
 		}
 		copyValue(result, input, SUM_ESS_ACTIVE_CHARGE_ENERGY, sum);
-		return sum;
 	}
 
 	/**
@@ -706,10 +703,9 @@ public class Converter {
 	 * @param ess
 	 * @param result
 	 * @param input
-	 * @return _sum/EssActiveDischargeEnergy
 	 * @throws Exception
 	 */
-	private Integer convertEssActiveDischargeEnergy(Map<String, Component> ess, Map<String, Object> result,
+	private void convertEssActiveDischargeEnergy(Map<String, Component> ess, Map<String, Object> result,
 			Map<String, Object> input) throws Exception {
 		Integer sum = null;
 		for (Entry<String, Component> entry : ess.entrySet()) {
@@ -727,7 +723,6 @@ public class Converter {
 			}
 		}
 		copyValue(result, input, SUM_ESS_ACTIVE_DISCHARGE_ENERGY, sum);
-		return sum;
 	}
 
 	/**
@@ -738,17 +733,15 @@ public class Converter {
 	 * @param meters (production)
 	 * @param result
 	 * @param input
-	 * @return _sum/ProductionAcActiveEnergy
 	 * @throws Exception
 	 */
-	private Integer sumProductionAcActiveEnergy(Map<String, Component> meters, Map<String, Object> result,
+	private void sumProductionAcActiveEnergy(Map<String, Component> meters, Map<String, Object> result,
 			Map<String, Object> input) throws Exception {
 		Integer sum = null;
 		for (Entry<String, Component> entry : meters.entrySet()) {
 			sum = getMeterEnergy(entry, result, input, ValueType.POSITIVE);
 		}
 		copyValue(result, input, SUM_PRODUCTION_AC_ACTIVE_ENERGY, sum);
-		return sum;
 	}
 
 	/**
@@ -799,14 +792,12 @@ public class Converter {
 	 * @param meter  (grid)
 	 * @param result
 	 * @param input
-	 * @return _sum/GridBuyActiveEnergy
 	 * @throws Exception
 	 */
-	private Integer convertGridBuyActiveEnergy(Entry<String, Component> meter, Map<String, Object> result,
+	private void convertGridBuyActiveEnergy(Entry<String, Component> meter, Map<String, Object> result,
 			Map<String, Object> input) throws Exception {
 		Integer sum = getMeterEnergy(meter, result, input, ValueType.POSITIVE);
 		copyValue(result, input, SUM_GRID_BUY_ACTIVE_ENERGY, sum);
-		return sum;
 	}
 
 	/**
@@ -816,37 +807,31 @@ public class Converter {
 	 * @param meter  (grid)
 	 * @param result
 	 * @param input
-	 * @return _sum/GridSellActiveEnergy
 	 * @throws Exception
 	 */
-	private Integer convertGridSellActiveEnergy(Entry<String, Component> meter, Map<String, Object> result,
+	private void convertGridSellActiveEnergy(Entry<String, Component> meter, Map<String, Object> result,
 			Map<String, Object> input) throws Exception {
 		Integer sum = getMeterEnergy(meter, result, input, ValueType.NEGATIVE);
 		copyValue(result, input, SUM_GRID_SELL_ACTIVE_ENERGY, sum);
-		return sum;
 	}
 
 	/**
 	 * _sum/EssActiveDishargeEnergy - _sum/EssActiveChargeEnergy +
 	 * _sum/GridBuyActiveEnergy - _sum/GridSellActiveEnergy +
-	 * _sum/ProductionAcActiveEnergy -> _sum/ConsumptionActiveEnergy (this method
-	 * takes the channels as function-arguments, since they had to be written to
-	 * influxdb and red again, which takes time and needs to be synchronized, which
-	 * takes even longer)
+	 * _sum/ProductionAcActiveEnergy -> _sum/ConsumptionActiveEnergy
 	 * 
 	 * @param meter  (grid)
 	 * @param result
 	 * @param input
 	 * @throws Exception
 	 */
-	private void sumConsumptionActiveEnergy(Map<String, Object> result, Map<String, Object> input, Integer essCharge,
-			Integer essDischarge, Integer gridBuy, Integer gridSell, Integer productionAc) throws Exception {
+	private void sumConsumptionActiveEnergy(Map<String, Object> result, Map<String, Object> input) throws Exception {
 		Integer sum = null;
-		sum = sub(sum, essCharge);
-		sum = add(sum, essDischarge);
-		sum = sub(sum, gridSell);
-		sum = add(sum, gridBuy);
-		sum = add(sum, productionAc);
+		sum = add(sum, getValue(result, SUM_ESS_ACTIVE_DISCHARGE_ENERGY));
+		sum = sub(sum, getValue(result, SUM_ESS_ACTIVE_CHARGE_ENERGY));
+		sum = add(sum, getValue(result, SUM_GRID_BUY_ACTIVE_ENERGY));
+		sum = sub(sum, getValue(result, SUM_GRID_SELL_ACTIVE_ENERGY));
+		sum = add(sum, getValue(result, SUM_PRODUCTION_AC_ACTIVE_ENERGY));
 		copyValue(result, input, SUM_CONSUMPTION_ACTIVE_ENERGY, sum);
 	}
 
