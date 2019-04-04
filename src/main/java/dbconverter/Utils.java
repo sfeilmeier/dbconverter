@@ -123,6 +123,7 @@ public class Utils {
 			switch (idWithoutNumber) {
 			case "system":
 			case "output":
+			case "io":
 			case "ctrlApiRest":
 			case "ctrlApiWebsocket":
 			case "ctrlBackend":
@@ -130,6 +131,8 @@ public class Utils {
 			case "ctrlDebugLog":
 			case "ctrlEvcs":
 			case "ctrlLimitTotalDischarge":
+			case "ctrlChannelThreshold":
+			case "ctrlEssAcIsland":
 			case "influx":
 			case "modbus":
 			case "scheduler":

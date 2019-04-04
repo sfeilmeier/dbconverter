@@ -93,7 +93,7 @@ public class Converter {
 			result.add(String.format(TOTAL_BATTERY_CHARGE_ENERGY, id));
 			result.add(String.format(TOTAL_BATTERY_DISCHARGE_ENERGY, id));
 		}
-		
+
 		for (String id : new String[] { "meter0", "meter1", "meter2" }) {
 			result.add(String.format(ACTIVE_POWER, id));
 			result.add(String.format(ACTIVE_POWER_L1, id));
@@ -107,9 +107,7 @@ public class Converter {
 			result.add(String.format(ACTIVE_POSITIVE_ENERGY, id));
 			result.add(String.format(ACTIVE_NEGATIVE_ENERGY, id));
 		}
-		
-		
-		
+
 		for (String id : new String[] { "charger0", "charger1" }) {
 			result.add(String.format(ACTUAL_POWER, id));
 			result.add(String.format(ACTUAL_ENERGY, id));
@@ -158,14 +156,12 @@ public class Converter {
 			sumConsumptionPower(result, input);
 			sumProductionDcActiveEnergy(things.productionMeters, result, input);
 			sumProductionActiveEnergy(things.productionMeters, result, input);
-			
-			sumConsumptionActiveEnergy(result, input,
-					convertEssActiveChargeEnergy(things.ess, result, input),
+
+			sumConsumptionActiveEnergy(result, input, convertEssActiveChargeEnergy(things.ess, result, input),
 					convertEssActiveDischargeEnergy(things.ess, result, input),
 					convertGridBuyActiveEnergy(things.gridMeter, result, input),
 					convertGridSellActiveEnergy(things.gridMeter, result, input),
-					sumProductionAcActiveEnergy(things.productionMeters, result, input)
-					); // depends on SUM channels
+					sumProductionAcActiveEnergy(things.productionMeters, result, input)); // depends on SUM channels
 			break;
 		case DESS:
 			convertDess(result, input);
@@ -212,7 +208,7 @@ public class Converter {
 			return sum + intValue;
 		}
 	}
-	
+
 	private static Integer multiply(Integer factor, Object value) {
 		if (value == null) {
 			return 0;
@@ -233,7 +229,7 @@ public class Converter {
 			return factor * intValue;
 		}
 	}
-	
+
 	private static Integer sub(Integer sum, Object value) {
 		if (value == null) {
 			return sum;
@@ -670,9 +666,10 @@ public class Converter {
 			}
 		}
 	}
-	
+
 	/**
-	 * ess0/TotalBatteryChargeEnergy + ess1/TotalBatteryChargeEnergy -> _sum/EssActiveChargeEnergy
+	 * ess0/TotalBatteryChargeEnergy + ess1/TotalBatteryChargeEnergy ->
+	 * _sum/EssActiveChargeEnergy
 	 * 
 	 * @param ess
 	 * @param result
@@ -700,9 +697,10 @@ public class Converter {
 		copyValue(result, input, SUM_ESS_ACTIVE_CHARGE_ENERGY, sum);
 		return sum;
 	}
-	
+
 	/**
-	 * ess0/TotalBatteryDischargeEnergy + ess1/TotalBatteryDischargeEnergy -> _sum/EssActiveDischargeEnergy
+	 * ess0/TotalBatteryDischargeEnergy + ess1/TotalBatteryDischargeEnergy ->
+	 * _sum/EssActiveDischargeEnergy
 	 * 
 	 * @param ess
 	 * @param result
@@ -730,10 +728,11 @@ public class Converter {
 		copyValue(result, input, SUM_ESS_ACTIVE_DISCHARGE_ENERGY, sum);
 		return sum;
 	}
-	
+
 	/**
-	 * meter1/ActiveEnergyL1 + meter1/ActiveEnergyL2 + meter1/ActiveEnergyL3 + meter2/ActiveEnergyL1 + ... -> _sum/ProductionActiveEnergy
-	 * (sources depend on the factoryId of the given meters)
+	 * meter1/ActiveEnergyL1 + meter1/ActiveEnergyL2 + meter1/ActiveEnergyL3 +
+	 * meter2/ActiveEnergyL1 + ... -> _sum/ProductionActiveEnergy (sources depend on
+	 * the factoryId of the given meters)
 	 * 
 	 * @param meters (production)
 	 * @param result
@@ -748,10 +747,11 @@ public class Converter {
 		}
 		copyValue(result, input, SUM_PRODUCTION_ACTIVE_ENERGY, sum);
 	}
-	
+
 	/**
-	 * meter1/ActiveEnergyL1 + meter1/ActiveEnergyL2 + meter1/ActiveEnergyL3 + meter2/ActiveEnergyL1 + ... -> _sum/ProductionAcActiveEnergy
-	 * (sources depend on the factoryId of the given meters)
+	 * meter1/ActiveEnergyL1 + meter1/ActiveEnergyL2 + meter1/ActiveEnergyL3 +
+	 * meter2/ActiveEnergyL1 + ... -> _sum/ProductionAcActiveEnergy (sources depend
+	 * on the factoryId of the given meters)
 	 * 
 	 * @param meters (production)
 	 * @param result
@@ -763,35 +763,43 @@ public class Converter {
 			Map<String, Object> input) throws Exception {
 		Integer sum = null;
 		for (Entry<String, Component> entry : meters.entrySet()) {
-			sum = getMeterEnergy(entry, result, input, null, CurrentType.AC);
+			sum = getMeterEnergy(entry, result, input, ValueType.POSITIVE);
 		}
 		copyValue(result, input, SUM_PRODUCTION_AC_ACTIVE_ENERGY, sum);
 		return sum;
 	}
-	
+
 	/**
-	 * ?? ... -> _sum/ProductionDcActiveEnergy
-	 * (sources depend on the factoryId of the given meters)
+	 * ?? ... -> _sum/ProductionDcActiveEnergy (sources depend on the factoryId of
+	 * the given meters)
 	 * 
 	 * @param meters (production)
 	 * @param result
 	 * @param input
 	 * @throws Exception
 	 */
-	private void sumProductionDcActiveEnergy(Map<String, Component> meters, Map<String, Object> result,
+	private void sumProductionDcActiveEnergy(Map<String, Component> chargers, Map<String, Object> result,
 			Map<String, Object> input) throws Exception {
 		Integer sum = null;
-		for (Entry<String, Component> entry : meters.entrySet()) {
-			sum = getMeterEnergy(entry, result, input, null, CurrentType.DC);
+		for (Entry<String, Component> entry : chargers.entrySet()) {
+			String factoryPid = entry.getValue().getFactoryId();
+			switch (factoryPid) {
+			case "TODO":
+				sum = add(sum, getValue(input, String.format(ACTUAL_ENERGY, entry.getKey())));
+				break;
+
+			default:
+				throw new Exception("Unknown Charger factory: " + factoryPid);
+			}
 		}
 		copyValue(result, input, SUM_PRODUCTION_DC_ACTIVE_ENERGY, sum);
 	}
-	
+
 	/**
-	 * meter0/ActivePositiveEnergy -> _sum/GridBuyActiveEnergy
-	 * (sources depend on the factoryId of the given meters)
+	 * meter0/ActivePositiveEnergy -> _sum/GridBuyActiveEnergy (sources depend on
+	 * the factoryId of the given meters)
 	 * 
-	 * @param meter (grid)
+	 * @param meter  (grid)
 	 * @param result
 	 * @param input
 	 * @return _sum/GridBuyActiveEnergy
@@ -799,16 +807,16 @@ public class Converter {
 	 */
 	private Integer convertGridBuyActiveEnergy(Entry<String, Component> meter, Map<String, Object> result,
 			Map<String, Object> input) throws Exception {
-		Integer sum =  getMeterEnergy(meter, result, input, ValueType.POSITIVE);
+		Integer sum = getMeterEnergy(meter, result, input, ValueType.POSITIVE);
 		copyValue(result, input, SUM_GRID_BUY_ACTIVE_ENERGY, sum);
 		return sum;
 	}
-	
+
 	/**
-	 * meter0/ActiveNegativeEnergy -> _sum/GridSellActiveEnergy
-	 * (sources depend on the factoryId of the given meters)
+	 * meter0/ActiveNegativeEnergy -> _sum/GridSellActiveEnergy (sources depend on
+	 * the factoryId of the given meters)
 	 * 
-	 * @param meter (grid)
+	 * @param meter  (grid)
 	 * @param result
 	 * @param input
 	 * @return _sum/GridSellActiveEnergy
@@ -820,21 +828,22 @@ public class Converter {
 		copyValue(result, input, SUM_GRID_SELL_ACTIVE_ENERGY, sum);
 		return sum;
 	}
-	
+
 	/**
-	 * _sum/EssActiveDishargeEnergy - _sum/EssActiveChargeEnergy + _sum/GridBuyActiveEnergy -
-	 * _sum/GridSellActiveEnergy + _sum/ProductionAcActiveEnergy -> _sum/ConsumptionActiveEnergy
-	 * (this method takes the channels as function-arguments,
-	 * since they had to be written to influxdb and red again, which takes time and needs to be
-	 * synchronized, which takes even longer)
+	 * _sum/EssActiveDishargeEnergy - _sum/EssActiveChargeEnergy +
+	 * _sum/GridBuyActiveEnergy - _sum/GridSellActiveEnergy +
+	 * _sum/ProductionAcActiveEnergy -> _sum/ConsumptionActiveEnergy (this method
+	 * takes the channels as function-arguments, since they had to be written to
+	 * influxdb and red again, which takes time and needs to be synchronized, which
+	 * takes even longer)
 	 * 
-	 * @param meter (grid)
+	 * @param meter  (grid)
 	 * @param result
 	 * @param input
 	 * @throws Exception
 	 */
-	private void sumConsumptionActiveEnergy(Map<String, Object> result,
-			Map<String, Object> input, Integer essCharge, Integer essDischarge, Integer gridBuy, Integer gridSell, Integer productionAc) throws Exception {
+	private void sumConsumptionActiveEnergy(Map<String, Object> result, Map<String, Object> input, Integer essCharge,
+			Integer essDischarge, Integer gridBuy, Integer gridSell, Integer productionAc) throws Exception {
 		Integer sum = null;
 		sum = sub(sum, essCharge);
 		sum = add(sum, essDischarge);
@@ -843,42 +852,22 @@ public class Converter {
 		sum = add(sum, productionAc);
 		copyValue(result, input, SUM_CONSUMPTION_ACTIVE_ENERGY, sum);
 	}
-	
+
 	private enum ValueType {
-		BALANCE,
-		POSITIVE,
-		NEGATIVE
+		POSITIVE, NEGATIVE
 	}
-	
-	private enum CurrentType {
-		DC,
-		AC,
-		COMBINED,
-	}
-	
-	private Integer getMeterEnergy(Entry<String, Component> meter, Map<String, Object> result, Map<String, Object> input, ValueType type) throws Exception {
-		return getMeterEnergy(meter, result, input, type, CurrentType.COMBINED);
-	}
-	
-	private Integer getMeterEnergy(Entry<String, Component> meter, Map<String, Object> result, Map<String, Object> input, ValueType type, CurrentType current)
-			throws Exception {
+
+	private Integer getMeterEnergy(Entry<String, Component> meter, Map<String, Object> result,
+			Map<String, Object> input, ValueType type) throws Exception {
 		Integer sum = null;
 		String clazz = meter.getValue().getFactoryId();
 		switch (clazz) {
 		// ASYMMETRIC
 		case "io.openems.impl.device.pro.FeneconProPvMeter":
 		case "Fenecon.Pro.PvMeter":
-			switch (current) {
-			case DC:
-				// no DC production
-				break;
-			case AC:
-			case COMBINED:
-				sum = add(sum, getValue(input, String.format(ACTIVE_ENERGY_L1, meter.getKey())));
-				sum = add(sum, getValue(input, String.format(ACTIVE_ENERGY_L2, meter.getKey())));
-				sum = add(sum, getValue(input, String.format(ACTIVE_ENERGY_L3, meter.getKey())));
-				break;
-			}
+			sum = add(sum, getValue(input, String.format(ACTIVE_ENERGY_L1, meter.getKey())));
+			sum = add(sum, getValue(input, String.format(ACTIVE_ENERGY_L2, meter.getKey())));
+			sum = add(sum, getValue(input, String.format(ACTIVE_ENERGY_L3, meter.getKey())));
 			break;
 		case "io.openems.impl.device.socomec.SocomecMeter":
 		case "Meter.SOCOMEC.DirisA14":
@@ -890,7 +879,7 @@ public class Converter {
 				sum = add(sum, multiply(1000, getValue(input, String.format(ACTIVE_NEGATIVE_ENERGY, meter.getKey()))));
 				break;
 			default:
-				throw new Exception("Unexpected ValueType (" + type+ ") for Meter class " + clazz);
+				throw new Exception("Unexpected ValueType (" + type + ") for Meter class " + clazz);
 			}
 			break;
 		// SYMMETRIC
