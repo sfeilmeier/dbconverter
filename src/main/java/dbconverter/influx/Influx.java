@@ -42,20 +42,16 @@ public class Influx {
 	}
 
 	public static QueryResult query(String query) {
-		Settings settings = new Settings();
-
-		try (InfluxDB influxDB = InfluxDBFactory.connect(settings.INFLUX_URL, settings.INFLUX_USER,
-				settings.INFLUX_PASSWORD)) {
-			QueryResult queryResult = influxDB.query(new Query(query, settings.INFLUX_DATABASE), TimeUnit.MILLISECONDS);
+		try (InfluxDB influxDB = InfluxDBFactory.connect(Settings.INFLUX_URL, Settings.INFLUX_USER,
+				Settings.INFLUX_PASSWORD)) {
+			QueryResult queryResult = influxDB.query(new Query(query, Settings.INFLUX_DATABASE), TimeUnit.MILLISECONDS);
 			return queryResult;
 		}
 	}
 
 	public static void write(BatchPoints batchPoints) {
-		Settings settings = new Settings();
-
-		try (InfluxDB influxDB = InfluxDBFactory.connect(settings.INFLUX_URL, settings.INFLUX_USER,
-				settings.INFLUX_PASSWORD)) {
+		try (InfluxDB influxDB = InfluxDBFactory.connect(Settings.INFLUX_URL, Settings.INFLUX_USER,
+				Settings.INFLUX_PASSWORD)) {
 			influxDB.write(batchPoints);
 		}
 	}
@@ -107,13 +103,11 @@ public class Influx {
 
 	public static BatchPoints createBatchPoints(int femsId, Things things, Map<Long, Map<String, Object>> data,
 			PointsFunction function) throws Exception {
-		Settings settings = new Settings();
-
 		// count number of points
 		int noOfPoints = 0;
 
 		// initialize BatchPoints
-		BatchPoints batchPoints = BatchPoints.database(settings.INFLUX_DATABASE) //
+		BatchPoints batchPoints = BatchPoints.database(Settings.INFLUX_DATABASE) //
 				.tag("fems", String.valueOf(femsId)) //
 				.build();
 

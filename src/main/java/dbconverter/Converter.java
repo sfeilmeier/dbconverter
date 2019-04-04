@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalDouble;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import dbconverter.EdgeConfig.Component;
 import dbconverter.influx.Influx.PointsFunction;
@@ -691,6 +690,7 @@ public class Converter {
 				// ignore
 				break;
 			case "io.openems.impl.device.pro.FeneconProEss":
+			case "Fenecon.Pro.Ess":
 				sum = add(sum, getValue(input, String.format(TOTAL_BATTERY_CHARGE_ENERGY, entry.getKey())));
 				break;
 			default:
@@ -720,6 +720,7 @@ public class Converter {
 				// ignore
 				break;
 			case "io.openems.impl.device.pro.FeneconProEss":
+			case "Fenecon.Pro.Ess":
 				sum = add(sum, getValue(input, String.format(TOTAL_BATTERY_DISCHARGE_ENERGY, entry.getKey())));
 				break;
 			default:
@@ -880,6 +881,7 @@ public class Converter {
 			}
 			break;
 		case "io.openems.impl.device.socomec.SocomecMeter":
+		case "Meter.SOCOMEC.DirisA14":
 			switch (type) {
 			case POSITIVE:
 				sum = add(sum, multiply(1000, getValue(input, String.format(ACTIVE_POSITIVE_ENERGY, meter.getKey()))));
