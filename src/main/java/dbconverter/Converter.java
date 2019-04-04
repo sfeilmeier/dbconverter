@@ -154,8 +154,9 @@ public class Converter {
 			convertEvcs(things.evcs, result, input);
 			sumProductionPower(result, input);
 			sumConsumptionPower(result, input);
-			sumProductionDcActiveEnergy(things.productionMeters, result, input);
-			sumProductionActiveEnergy(things.productionMeters, result, input);
+			sumProductionDcActiveEnergy(things.chargers, result, input);
+			sumProductionAcActiveEnergy(things.productionMeters, result, input);
+			sumProductionActiveEnergy(result, input);
 
 			sumConsumptionActiveEnergy(result, input, convertEssActiveChargeEnergy(things.ess, result, input),
 					convertEssActiveDischargeEnergy(things.ess, result, input),
@@ -731,25 +732,6 @@ public class Converter {
 
 	/**
 	 * meter1/ActiveEnergyL1 + meter1/ActiveEnergyL2 + meter1/ActiveEnergyL3 +
-	 * meter2/ActiveEnergyL1 + ... -> _sum/ProductionActiveEnergy (sources depend on
-	 * the factoryId of the given meters)
-	 * 
-	 * @param meters (production)
-	 * @param result
-	 * @param input
-	 * @throws Exception
-	 */
-	private void sumProductionActiveEnergy(Map<String, Component> meters, Map<String, Object> result,
-			Map<String, Object> input) throws Exception {
-		Integer sum = null;
-		for (Entry<String, Component> entry : meters.entrySet()) {
-			sum = getMeterEnergy(entry, result, input, null);
-		}
-		copyValue(result, input, SUM_PRODUCTION_ACTIVE_ENERGY, sum);
-	}
-
-	/**
-	 * meter1/ActiveEnergyL1 + meter1/ActiveEnergyL2 + meter1/ActiveEnergyL3 +
 	 * meter2/ActiveEnergyL1 + ... -> _sum/ProductionAcActiveEnergy (sources depend
 	 * on the factoryId of the given meters)
 	 * 
@@ -793,6 +775,21 @@ public class Converter {
 			}
 		}
 		copyValue(result, input, SUM_PRODUCTION_DC_ACTIVE_ENERGY, sum);
+	}
+
+	/**
+	 * _sum/ProductionDcActualPower + _sum/ProductionAcActivePower ->
+	 * _sum/ProductionActivePower
+	 * 
+	 * @param result
+	 * @param input
+	 * @param input
+	 */
+	private void sumProductionActiveEnergy(Map<String, Object> result, Map<String, Object> input) {
+		Integer sum = null;
+		sum = add(sum, getValue(result, SUM_PRODUCTION_AC_ACTIVE_ENERGY));
+		sum = add(sum, getValue(result, SUM_PRODUCTION_DC_ACTIVE_ENERGY));
+		copyValue(result, input, SUM_PRODUCTION_ACTIVE_ENERGY, sum);
 	}
 
 	/**
