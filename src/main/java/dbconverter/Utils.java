@@ -126,6 +126,7 @@ public class Utils {
 			case "io":
 			case "ctrlApiRest":
 			case "ctrlApiWebsocket":
+			case "ctrlApiModbusTcp":
 			case "ctrlBackend":
 			case "ctrlBalancing":
 			case "ctrlDebugLog":
