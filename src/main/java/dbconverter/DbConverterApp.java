@@ -16,7 +16,7 @@ import dbconverter.Utils.Things;
 import dbconverter.influx.Influx;
 import dbconverter.odoo.Odoo;
 
-public class App {
+public class DbConverterApp {
 
 	private final static Pattern cliArgPattern = Pattern.compile("^-([^=\\s]+)=(\\S*)$");
 

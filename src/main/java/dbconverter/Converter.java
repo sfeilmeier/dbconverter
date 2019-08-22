@@ -131,7 +131,7 @@ public class Converter {
 			result.add(String.format(ACTUAL_ENERGY, id));
 		}
 
-		switch (App.TYPE) {
+		switch (DbConverterApp.TYPE) {
 		case DESS:
 			result.add(DESS_METER0_ACTIVE_POWER_L1);
 			result.add(DESS_METER0_ACTIVE_POWER_L2);
@@ -162,7 +162,7 @@ public class Converter {
 
 	public final PointsFunction FUNCTION = (things, input) -> {
 		Map<String, Object> result = new HashMap<>();
-		switch (App.TYPE) {
+		switch (DbConverterApp.TYPE) {
 		case OPENEMS_V1:
 			convertEssSoc(things.ess, result, input);
 
@@ -198,7 +198,7 @@ public class Converter {
 			return;
 		}
 
-		if (!App.OVERWRITE) {
+		if (!DbConverterApp.OVERWRITE) {
 			// do nothing if there is already a value
 			Object existing = getValue(input, targetChannel);
 			if (existing != null) {
@@ -435,6 +435,7 @@ public class Converter {
 		case "Meter.SOCOMEC.DirisA14":
 		case "Meter.SOCOMEC.CountisE24":
 		case "Fenecon.Mini.PvMeter":
+		case "Meter.Janitza.UMG96RME":
 			sum = add(sum, getValue(input, String.format(ACTIVE_POWER, meter.getKey())));
 			break;
 
@@ -459,7 +460,7 @@ public class Converter {
 		for (Entry<String, Component> entry : chargers.entrySet()) {
 			String factoryPid = entry.getValue().getFactoryId();
 			switch (factoryPid) {
-			case "TODO":
+			case "EssDcCharger.Fenecon.Commercial40":
 				sum = add(sum, getValue(input, String.format(ACTUAL_POWER, entry.getKey())));
 				break;
 
@@ -803,7 +804,7 @@ public class Converter {
 		for (Entry<String, Component> entry : chargers.entrySet()) {
 			String factoryPid = entry.getValue().getFactoryId();
 			switch (factoryPid) {
-			case "TODO":
+			case "EssDcCharger.Fenecon.Commercial40":
 				sum = add(sum, getValue(input, String.format(ACTUAL_ENERGY, entry.getKey())));
 				break;
 
@@ -920,6 +921,7 @@ public class Converter {
 
 		case "io.openems.impl.device.socomec.SocomecMeter":
 		case "Meter.SOCOMEC.DirisA14":
+		case "Meter.Janitza.UMG96RME":
 			switch (type) {
 			case POSITIVE:
 				sum = add(sum, multiply(1000, getValue(input, String.format(ACTIVE_POSITIVE_ENERGY, meter.getKey()))));

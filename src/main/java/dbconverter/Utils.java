@@ -131,8 +131,10 @@ public class Utils {
 			case "ctrlBalancing":
 			case "ctrlDebugLog":
 			case "ctrlEvcs":
+			case "ctrlLimitActivePower":
 			case "ctrlLimitTotalDischarge":
 			case "ctrlChannelThreshold":
+			case "ctrlCommercial40SurplusFeedIn":
 			case "ctrlEssAcIsland":
 			case "influx":
 			case "modbus":
@@ -172,7 +174,7 @@ public class Utils {
 		Settings settings = new Settings();
 
 		String socField;
-		switch (App.TYPE) {
+		switch (DbConverterApp.TYPE) {
 		case DESS:
 			socField = Converter.DESS_SOC;
 			break;
