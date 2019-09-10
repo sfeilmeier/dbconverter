@@ -121,6 +121,7 @@ public class Utils {
 			}
 			String idWithoutNumber = id.replaceAll("\\d*$", "");
 			switch (idWithoutNumber) {
+			case "bms":
 			case "system":
 			case "output":
 			case "io":
@@ -130,12 +131,15 @@ public class Utils {
 			case "ctrlBackend":
 			case "ctrlBalancing":
 			case "ctrlDebugLog":
+			case "ctrlDetailedLog":
 			case "ctrlEvcs":
 			case "ctrlLimitActivePower":
 			case "ctrlLimitTotalDischarge":
+			case "ctrlPeakShaving":
 			case "ctrlChannelThreshold":
 			case "ctrlCommercial40SurplusFeedIn":
 			case "ctrlEssAcIsland":
+			case "evcsCluster":
 			case "influx":
 			case "modbus":
 			case "scheduler":

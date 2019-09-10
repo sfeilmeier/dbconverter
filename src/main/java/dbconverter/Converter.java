@@ -339,6 +339,7 @@ public class Converter {
 			case "Fenecon.Pro.Ess":
 			case "Fenecon.Mini.Ess":
 			case "Ess.Fenecon.Commercial40":
+			case "Ess.Kaco.BlueplanetGridsave50":
 				socs.add(getValue(input, String.format(SOC, entry.getKey())));
 				break;
 			default:
@@ -388,6 +389,7 @@ public class Converter {
 			// SYMMETRIC
 			case "io.openems.impl.device.commercial.FeneconCommercialEss":
 			case "Ess.Fenecon.Commercial40":
+			case "Ess.Kaco.BlueplanetGridsave50":
 				sum = add(sum, getValue(input, String.format(ACTIVE_POWER, entry.getKey())));
 				break;
 
@@ -436,6 +438,7 @@ public class Converter {
 		case "Meter.SOCOMEC.CountisE24":
 		case "Fenecon.Mini.PvMeter":
 		case "Meter.Janitza.UMG96RME":
+		case "Meter.CarloGavazzi.EM300":
 			sum = add(sum, getValue(input, String.format(ACTIVE_POWER, meter.getKey())));
 			break;
 
@@ -712,6 +715,7 @@ public class Converter {
 			String factoryPid = entry.getValue().getFactoryId();
 			switch (factoryPid) {
 			case "io.openems.impl.device.system.asymmetricsymmetriccombinationess.AsymmetricSymmetricCombinationEssNature":
+			case "Ess.Kaco.BlueplanetGridsave50":
 				// ignore
 				break;
 			case "io.openems.impl.device.pro.FeneconProEss":
@@ -749,6 +753,7 @@ public class Converter {
 			String factoryPid = entry.getValue().getFactoryId();
 			switch (factoryPid) {
 			case "io.openems.impl.device.system.asymmetricsymmetriccombinationess.AsymmetricSymmetricCombinationEssNature":
+			case "Ess.Kaco.BlueplanetGridsave50":
 				// ignore
 				break;
 			case "io.openems.impl.device.pro.FeneconProEss":
@@ -889,6 +894,10 @@ public class Converter {
 		Integer sum = null;
 		String clazz = meter.getValue().getFactoryId();
 		switch (clazz) {
+		// IGNORE
+		case "Meter.CarloGavazzi.EM300":
+			break;
+
 		// ASYMMETRIC
 		case "io.openems.impl.device.pro.FeneconProPvMeter":
 		case "Fenecon.Pro.PvMeter":
