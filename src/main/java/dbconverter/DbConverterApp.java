@@ -121,13 +121,14 @@ public class DbConverterApp {
 	}
 
 	private static void parseArgs(String[] args) throws Exception {
+		List<Integer> fems = new ArrayList<>();
 		for (String arg : args) {
 			Matcher m = cliArgPattern.matcher(arg);
 			if (m.matches()) {
 				String v = m.group(2);
 				switch (m.group(1)) {
 				case "FEMS":
-					FEMS = new int[] { Integer.parseInt(v) };
+					fems.add(Integer.parseInt(v));
 					break;
 				case "FROM_DATE":
 					FROM_DATE = v;
@@ -165,6 +166,10 @@ public class DbConverterApp {
 			} else {
 				throw new Exception("illegal parameter format: " + arg);
 			}
+		}
+
+		if (!fems.isEmpty()) {
+			FEMS = fems.stream().mapToInt(i -> i).toArray();
 		}
 	}
 
