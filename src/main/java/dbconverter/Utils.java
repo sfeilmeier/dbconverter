@@ -143,6 +143,7 @@ public class Utils {
 			case "influx":
 			case "modbus":
 			case "scheduler":
+			case "rrd4j":
 				// ignore
 				break;
 
