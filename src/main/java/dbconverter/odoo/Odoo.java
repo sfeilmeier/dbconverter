@@ -38,16 +38,17 @@ public class Odoo {
 	}
 
 	public static EdgeConfig getConfig(int femsId) throws Exception {
-		int[] recordIds = Odoo.search(Settings.ODOO_URL, Settings.ODOO_DATABASE, 1, Settings.ODOO_PASSWORD,
-				Settings.ODOO_FEMS_MODEL, //
+		int[] recordIds = Odoo.search(Settings.ODOO_URL, Settings.ODOO_DATABASE, Settings.ODOO_UID,
+				Settings.ODOO_PASSWORD, Settings.ODOO_FEMS_MODEL, //
 				new Domain[] { new Domain(Field.FemsDevice.NAME.n(), "=", "fems" + femsId) });
 
 		if (recordIds.length == 0) {
 			throw new Exception("No result!");
 		}
 
-		Map<String, Object> record = Odoo.readOne(Settings.ODOO_URL, Settings.ODOO_DATABASE, 1, Settings.ODOO_PASSWORD,
-				Settings.ODOO_FEMS_MODEL, recordIds[0], new Field[] { Field.FemsDevice.OPENEMS_CONFIG });
+		Map<String, Object> record = Odoo.readOne(Settings.ODOO_URL, Settings.ODOO_DATABASE, Settings.ODOO_UID,
+				Settings.ODOO_PASSWORD, Settings.ODOO_FEMS_MODEL, recordIds[0],
+				new Field[] { Field.FemsDevice.OPENEMS_CONFIG });
 
 		return EdgeConfig
 				.fromJson(JsonUtils.parseToJsonObject((String) record.get(Field.FemsDevice.OPENEMS_CONFIG.n())));

@@ -21,6 +21,7 @@ import org.influxdb.dto.QueryResult.Series;
 
 import dbconverter.Settings;
 import dbconverter.Utils.Things;
+import okhttp3.OkHttpClient;
 
 public class Influx {
 
@@ -42,8 +43,10 @@ public class Influx {
 	}
 
 	public static QueryResult query(String query) {
+		OkHttpClient.Builder client = new OkHttpClient.Builder().connectTimeout(1, TimeUnit.MINUTES)
+				.readTimeout(1, TimeUnit.MINUTES).writeTimeout(1, TimeUnit.MINUTES).retryOnConnectionFailure(true);
 		try (InfluxDB influxDB = InfluxDBFactory.connect(Settings.INFLUX_URL, Settings.INFLUX_USER,
-				Settings.INFLUX_PASSWORD)) {
+				Settings.INFLUX_PASSWORD, client)) {
 			QueryResult queryResult = influxDB.query(new Query(query, Settings.INFLUX_DATABASE), TimeUnit.MILLISECONDS);
 			return queryResult;
 		}

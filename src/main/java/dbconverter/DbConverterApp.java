@@ -49,13 +49,24 @@ public class DbConverterApp {
 
 			// Get configuration
 			Things things = null;
-			if (TYPE == Types.OPENEMS_V1) {
-				EdgeConfig config = Odoo.getConfig(femsId);
-				things = Utils.getThings(config);
+			try {
+				if (TYPE == Types.OPENEMS_V1 || TYPE == Types.OPENHAB_IO) {
+					EdgeConfig config = Odoo.getConfig(femsId);
+					things = Utils.getThings(config);
+				}
+			} catch (ClassCastException e) {
+				// this happens when there is no config
 			}
 
 			// Get start/end date
-			ZonedDateTime initialFromDate = Utils.getFromDate(femsId, FROM_DATE);
+			ZonedDateTime initialFromDate;
+			try {
+				initialFromDate = Utils.getFromDate(femsId, FROM_DATE);
+			} catch (NullPointerException e) {
+				System.out.println(femsId + ": Unable to read 'From-Timestamp'");
+				System.out.println();
+				continue;
+			}
 			ZonedDateTime initialToDate = Utils.getToDate(TO_DATE);
 
 			List<Utils.TimeChunk> timeChunks = Utils.getTimeChunks(initialFromDate, initialToDate, CHUNK_DAYS,

@@ -68,11 +68,27 @@ public class Converter {
 	public final static String DESS_CHARGER1_ACTUAL_POWER = "PV2_Charger2_Output_Power";
 	public final static String DESS_CHARGER1_ACTUAL_ENERGY = "PV2_Charger2_Cumulative_Output";
 	public final static String DESS_METER1_ACTIVE_POWER_L1 = "PCS1_Phase1_PV_Inverter_Active_Power";
-	public final static String DESS_METER1_ACTIVE_POWER_L2 = "PCS1_Phase1_PV_Inverter_Active_Power";
+	public final static String DESS_METER1_ACTIVE_POWER_L2 = "PCS2_Phase2_PV_Inverter_Active_Power";
 	public final static String DESS_METER1_ACTIVE_POWER_L3 = "PCS3_Phase3_PV_Inverter_Active_Power";
 	public final static String DESS_CONSUMPTION_L1 = "PCS1_Phase1_Load_Active_Power";
 	public final static String DESS_CONSUMPTION_L2 = "PCS2_Phase2_Load_Active_Power";
 	public final static String DESS_CONSUMPTION_L3 = "PCS3_Phase3_Load_Active_Power";
+	public final static String DESS_CONSUMPTION_ENERGY = "PCS_Summary_Accumulative_Electricity_Used_by_load";
+
+	private final static String WAGO_1_1 = "Feldbus_DigitalOutput_1_1";
+	private final static String WAGO_1_2 = "Feldbus_DigitalOutput_1_2";
+	private final static String WAGO_2_1 = "Feldbus_DigitalOutput_2_1";
+	private final static String WAGO_2_2 = "Feldbus_DigitalOutput_2_2";
+	private final static String WAGO_RELAY_1 = "Feldbus_RelayOutput_1";
+	private final static String WAGO_RELAY_2 = "Feldbus_RelayOutput_2";
+	private final static String WAGO_RELAY_3 = "Feldbus_RelayOutput_3";
+	private final static String IO_WAGO_1_1 = "%s/DigitalOutputM1C1";
+	private final static String IO_WAGO_1_2 = "%s/DigitalOutputM1C2";
+	private final static String IO_WAGO_2_1 = "%s/DigitalOutputM2C1";
+	private final static String IO_WAGO_2_2 = "%s/DigitalOutputM2C2";
+	private final static String IO_WAGO_RELAY_1 = "%s/RelayM1";
+	private final static String IO_WAGO_RELAY_2 = "%s/RelayM2";
+	private final static String IO_WAGO_RELAY_3 = "%s/RelayM3";
 
 	public final Set<String> CHANNELS;
 	{
@@ -131,6 +147,16 @@ public class Converter {
 			result.add(String.format(ACTUAL_ENERGY, id));
 		}
 
+		for (String id : new String[] { "io0" }) {
+			result.add(String.format(IO_WAGO_1_1, id));
+			result.add(String.format(IO_WAGO_1_2, id));
+			result.add(String.format(IO_WAGO_2_1, id));
+			result.add(String.format(IO_WAGO_2_2, id));
+			result.add(String.format(IO_WAGO_RELAY_1, id));
+			result.add(String.format(IO_WAGO_RELAY_2, id));
+			result.add(String.format(IO_WAGO_RELAY_3, id));
+		}
+
 		switch (DbConverterApp.TYPE) {
 		case DESS:
 			result.add(DESS_METER0_ACTIVE_POWER_L1);
@@ -149,6 +175,16 @@ public class Converter {
 			result.add(DESS_CONSUMPTION_L1);
 			result.add(DESS_CONSUMPTION_L2);
 			result.add(DESS_CONSUMPTION_L3);
+			result.add(DESS_CONSUMPTION_ENERGY);
+			break;
+		case OPENHAB_IO:
+			result.add(WAGO_1_1);
+			result.add(WAGO_1_2);
+			result.add(WAGO_2_1);
+			result.add(WAGO_2_2);
+			result.add(WAGO_RELAY_1);
+			result.add(WAGO_RELAY_2);
+			result.add(WAGO_RELAY_3);
 			break;
 		case OPENEMS_V1:
 			for (String id : new String[] { "evcs0" }) {
@@ -187,6 +223,9 @@ public class Converter {
 			break;
 		case DESS:
 			convertDess(result, input);
+			break;
+		case OPENHAB_IO:
+			convertIo(things.ios, result, input);
 			break;
 		}
 //		WARNING! setChannelValueToZero(result, SUM_PRODUCTION_DC_ACTUAL_POWER);
@@ -283,6 +322,8 @@ public class Converter {
 			longValue = ((Double) value).longValue();
 		} else if (value instanceof Long) {
 			longValue = (Long) value;
+		} else if (value instanceof Integer) {
+			longValue = (Integer) value;
 		} else {
 			throw new IllegalArgumentException("Unable to cast value " + value);
 		}
@@ -502,6 +543,42 @@ public class Converter {
 	}
 
 	/**
+	 * Feldbus_DigitalOutput_1_1 -> io0/DigitalOutputM1C1
+	 * 
+	 * @param evcss
+	 * @param result
+	 * @param input
+	 * @throws Exception
+	 */
+	private void convertIo(Map<String, Component> ios, Map<String, Object> result, Map<String, Object> input)
+			throws Exception {
+		for (Entry<String, Component> entry : ios.entrySet()) {
+			String factoryPid = entry.getValue().getFactoryId();
+			switch (factoryPid) {
+			case "IO.WAGO":
+				copyValue(result, input, String.format(IO_WAGO_1_1, entry.getKey()),
+						add((Integer) null, getValue(input, WAGO_1_1)));
+				copyValue(result, input, String.format(IO_WAGO_1_2, entry.getKey()),
+						add((Integer) null, getValue(input, WAGO_1_2)));
+				copyValue(result, input, String.format(IO_WAGO_2_1, entry.getKey()),
+						add((Integer) null, getValue(input, WAGO_2_1)));
+				copyValue(result, input, String.format(IO_WAGO_2_2, entry.getKey()),
+						add((Integer) null, getValue(input, WAGO_2_2)));
+				copyValue(result, input, String.format(IO_WAGO_RELAY_1, entry.getKey()),
+						add((Integer) null, getValue(input, WAGO_RELAY_1)));
+				copyValue(result, input, String.format(IO_WAGO_RELAY_2, entry.getKey()),
+						add((Integer) null, getValue(input, WAGO_RELAY_2)));
+				copyValue(result, input, String.format(IO_WAGO_RELAY_3, entry.getKey()),
+						add((Integer) null, getValue(input, WAGO_RELAY_3)));
+				break;
+
+			default:
+				throw new Exception("Unknown EVCS factory: " + factoryPid);
+			}
+		}
+	}
+
+	/**
 	 * meter1/ActivePower -> _sum/ProductionAcActivePower
 	 * 
 	 * @param productionMeters
@@ -572,6 +649,7 @@ public class Converter {
 	private void convertDess(Map<String, Object> result, Map<String, Object> input) throws Exception {
 		// Grid
 		Integer gridPower = null;
+		Long gridEnergy = null;
 		{
 			Integer meter0ActivePowerL1 = null;
 			meter0ActivePowerL1 = add(meter0ActivePowerL1, getValue(input, DESS_METER0_ACTIVE_POWER_L1));
@@ -607,6 +685,7 @@ public class Converter {
 				meter0ActiveProductionEnergy *= 100;
 			}
 			copyValue(result, input, String.format(ACTIVE_PRODUCTION_ENERGY, "meter0"), meter0ActiveProductionEnergy);
+			copyValue(result, input, SUM_GRID_BUY_ACTIVE_ENERGY, meter0ActiveProductionEnergy);
 
 			Integer meter0ActiveConsumptionEnergy = null;
 			meter0ActiveConsumptionEnergy = add(meter0ActiveConsumptionEnergy,
@@ -615,6 +694,9 @@ public class Converter {
 				meter0ActiveConsumptionEnergy *= 100;
 			}
 			copyValue(result, input, String.format(ACTIVE_CONSUMPTION_ENERGY, "meter0"), meter0ActiveConsumptionEnergy);
+
+			gridEnergy = add(gridEnergy, meter0ActiveConsumptionEnergy);
+			copyValue(result, input, SUM_GRID_SELL_ACTIVE_ENERGY, gridEnergy);
 		}
 
 		// SoC
@@ -624,6 +706,7 @@ public class Converter {
 
 		// Production DC
 		Integer productionDcPower = null;
+		Long productionDcEnergy = null;
 		{
 			Integer charger0ActualPower = null;
 			charger0ActualPower = add(charger0ActualPower, getValue(input, DESS_CHARGER0_ACTUAL_POWER));
@@ -640,20 +723,23 @@ public class Converter {
 			Long charger0ActualEnergy = null;
 			charger0ActualEnergy = add(charger0ActualEnergy, getValue(input, DESS_CHARGER0_ACTUAL_ENERGY));
 			if (charger0ActualEnergy != null) {
-				charger0ActualEnergy = (charger0ActualEnergy + (long) Math.pow(2, 32)) * 100;
+				charger0ActualEnergy *= 100;
 			}
 			copyValue(result, input, String.format(ACTUAL_ENERGY, "charger0"), charger0ActualEnergy);
 
 			Long charger1ActualEnergy = null;
 			charger1ActualEnergy = add(charger1ActualEnergy, getValue(input, DESS_CHARGER1_ACTUAL_ENERGY));
 			if (charger1ActualEnergy != null) {
-				charger1ActualEnergy = (charger1ActualEnergy + (long) Math.pow(2, 32)) * 100;
+				charger1ActualEnergy *= 100;
 			}
 			copyValue(result, input, String.format(ACTUAL_ENERGY, "charger1"), charger1ActualEnergy);
+			productionDcEnergy = add(charger0ActualEnergy, charger1ActualEnergy);
+			copyValue(result, input, SUM_PRODUCTION_DC_ACTIVE_ENERGY, productionDcEnergy);
 		}
 
 		// Production AC
 		Integer productionAcPower = null;
+		Long productionAcEnergy = null;
 		{
 			Integer meter1ActivePowerL1 = null;
 			meter1ActivePowerL1 = add(meter1ActivePowerL1, getValue(input, DESS_METER1_ACTIVE_POWER_L1));
@@ -672,6 +758,11 @@ public class Converter {
 			productionAcPower = add(productionAcPower, meter1ActivePowerL3);
 			copyValue(result, input, String.format(ACTIVE_POWER, "meter1"), gridPower);
 			copyValue(result, input, SUM_PRODUCTION_AC_ACTIVE_POWER, productionAcPower);
+
+			/*
+			 * unfortunately there is no recording for Production AC Energy!
+			 * (productionAcEnergy)
+			 */
 		}
 
 		// Production Total
@@ -679,14 +770,21 @@ public class Converter {
 		productionPower = add(productionPower, productionDcPower);
 		productionPower = add(productionPower, productionAcPower);
 		copyValue(result, input, SUM_PRODUCTION_ACTIVE_POWER, productionPower);
+		Long productionEnergy = null;
+		productionEnergy = add(productionDcEnergy, productionAcEnergy);
+		copyValue(result, input, SUM_PRODUCTION_ACTIVE_ENERGY, productionEnergy);
 
 		// Consumption
 		Integer consumptionPower = null;
+		Integer consumptionEnergy = null;
 		{
 			consumptionPower = add(consumptionPower, getValue(input, DESS_CONSUMPTION_L1));
 			consumptionPower = add(consumptionPower, getValue(input, DESS_CONSUMPTION_L2));
 			consumptionPower = add(consumptionPower, getValue(input, DESS_CONSUMPTION_L3));
 			copyValue(result, input, SUM_CONSUMPTION_ACTIVE_POWER, consumptionPower);
+
+			consumptionEnergy = add(consumptionEnergy, getValue(input, DESS_CONSUMPTION_ENERGY));
+			copyValue(result, input, SUM_CONSUMPTION_ACTIVE_ENERGY, consumptionEnergy);
 		}
 
 		// Charge/Discharge

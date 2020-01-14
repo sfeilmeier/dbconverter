@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import org.influxdb.InfluxDBIOException;
 import org.influxdb.dto.QueryResult;
 
 import dbconverter.EdgeConfig.Component;
@@ -98,6 +99,7 @@ public class Utils {
 		Map<String, Component> productionMeters = new HashMap<>();
 		Map<String, Component> chargers = new HashMap<>();
 		Map<String, Component> evcs = new HashMap<>();
+		Map<String, Component> ios = new HashMap<>();
 
 		protected void assertValues() throws Exception {
 			if (ess.isEmpty()) {
@@ -124,7 +126,6 @@ public class Utils {
 			case "bms":
 			case "system":
 			case "output":
-			case "io":
 			case "ctrlApiRest":
 			case "ctrlApiWebsocket":
 			case "ctrlApiModbusTcp":
@@ -139,6 +140,8 @@ public class Utils {
 			case "ctrlChannelThreshold":
 			case "ctrlCommercial40SurplusFeedIn":
 			case "ctrlEssAcIsland":
+			case "ctrlChannelSingleThreshold":
+			case "ctrlChpSoc":
 			case "evcsCluster":
 			case "influx":
 			case "modbus":
@@ -167,6 +170,10 @@ public class Utils {
 				result.evcs.put(id, component);
 				break;
 
+			case "io":
+				result.ios.put(id, component);
+				break;
+
 			default:
 				throw new Exception("Undefined component: " + id);
 			}
@@ -188,11 +195,24 @@ public class Utils {
 			socField = "ess0/Soc";
 			break;
 		}
-		QueryResult result = Influx.query("SELECT \"" + socField + "\", time FROM " + settings.INFLUX_SOURCE_MEASUREMENT
-				+ " WHERE fems = '" + femsId + "' AND time > '2010-01-01' LIMIT 1");
-		long timestamp = ((Double) result.getResults().get(0).getSeries().get(0).getValues().get(0).get(0)).longValue();
-		Instant instant = Instant.ofEpochMilli(timestamp);
-		return ZonedDateTime.ofInstant(instant, ZoneOffset.UTC);
+
+		InfluxDBIOException exception = null;
+		for (int i = 0; i < 3; i++) {
+			try {
+				QueryResult result = Influx
+						.query("SELECT \"" + socField + "\", time FROM " + settings.INFLUX_SOURCE_MEASUREMENT
+								+ " WHERE fems = '" + femsId + "' AND time > '2015-01-01' LIMIT 1");
+				long timestamp = ((Double) result.getResults().get(0).getSeries().get(0).getValues().get(0).get(0))
+						.longValue();
+				Instant instant = Instant.ofEpochMilli(timestamp);
+				return ZonedDateTime.ofInstant(instant, ZoneOffset.UTC);
+			} catch (InfluxDBIOException e) {
+				// retry
+				System.out.println("## Retry after timeout");
+				exception = e;
+			}
+		}
+		throw exception;
 	}
 
 }
